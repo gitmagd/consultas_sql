@@ -284,15 +284,108 @@ WHERE r.review_id IS NULL
 ORDER BY a.accommodation_id;
 
 -- CONSULTA 15 (LEFT JOIN	Sin reservas	Filtrar null)
+-- LEFT JOIN para identificar huéspedes registrados que nunca han realizado una reserva.
+
+SELECT
+  g.guest_id,
+  g.first_name || ' ' || g.last_name AS guest_name,
+  g.email,
+  g.nationality,
+  g.created_at
+FROM guests g
+LEFT JOIN bookings b
+  ON g.guest_id = b.guest_id
+WHERE b.booking_id IS NULL
+ORDER BY g.created_at DESC;
+
+-- CONSULTA 16 (AGG	-  Total ingresos - SUM)
+-- Agrega SUM de total_amount agrupado por alojamiento, considerando solo pagos Completed.
+SELECT
+  a.accommodation_id,
+  a.name AS accommodation,
+  a.currency_code,
+  COUNT(b.booking_id) AS total_bookings,
+  SUM(p.amount) AS total_revenue
+FROM accommodations a
+INNER JOIN bookings b
+  ON a.accommodation_id = b.accommodation_id
+INNER JOIN payments p
+  ON b.booking_id = p.booking_id
+WHERE p.payment_status = 'Completed'
+GROUP BY
+  a.accommodation_id, a.name, a.currency_code
+ORDER BY total_revenue DESC;
+
+-- CONSULTA 17 (AGG	- Promedio rating - AVG)
+-- Calcula el AVG del rating de las reseñas agrupado por alojamiento.
+
+SELECT
+  a.accommodation_id,
+  a.name AS accommodation,
+  COUNT(r.review_id)          AS total_reviews,
+  ROUND(AVG(r.rating), 2)      AS avg_rating,
+  MIN(r.rating)               AS min_rating,
+  MAX(r.rating)               AS max_rating
+FROM accommodations a
+INNER JOIN reviews r
+  ON a.accommodation_id = r.accommodation_id
+GROUP BY a.accommodation_id, a.name
+ORDER BY avg_rating DESC;
+
+-- CONSULTA 18 (AGG	 - Top alojamientos	-  COUNT + LIMIT)
+-- Cuenta reservas por alojamiento y limita a los 5 con mayor demanda.
+SELECT
+  a.accommodation_id,
+  a.name AS accommodation,
+  at2.type_name,
+  COUNT(b.booking_id) AS total_bookings
+FROM accommodations a
+INNER JOIN bookings b
+  ON a.accommodation_id = b.accommodation_id
+INNER JOIN accommodation_types at2
+  ON a.accommodation_type_id = at2.accommodation_type_id
+GROUP BY
+  a.accommodation_id, a.name, at2.type_name
+ORDER BY total_bookings DESC
+LIMIT 5;
 
 
+-- CONSULTA 19 (HAVING	 - Más de 3 reservas - 	GROUP BY + HAVING)
+-- Usando GROUP BY + HAVING para filtrar huéspedes frecuentes con al menos 4 reservas.
+SELECT
+  g.guest_id,
+  g.first_name || ' ' || g.last_name AS guest_name,
+  g.email,
+  g.nationality,
+  COUNT(b.booking_id)           AS total_bookings,
+  SUM(b.total_amount)           AS total_spent
+FROM guests g
+INNER JOIN bookings b
+  ON g.guest_id = b.guest_id
+GROUP BY
+  g.guest_id, g.first_name, g.last_name,
+  g.email, g.nationality
+HAVING COUNT(b.booking_id) > 3
+ORDER BY total_bookings DESC;
 
-
-
-
-
-
-
-
+-- CONSULTA 20 (Subconsulta	Alojamiento más caro	Subquery)
+-- Subconsulta correlacionada que devuelve el alojamiento más caro dentro de cada tipo.
+SELECT
+  a.accommodation_id,
+  a.name,
+  at2.type_name,
+  a.base_price_per_night,
+  a.currency_code
+FROM accommodations a
+INNER JOIN accommodation_types at2
+  ON a.accommodation_type_id = at2.accommodation_type_id
+WHERE a.base_price_per_night = (
+  SELECT MAX(a2.base_price_per_night)
+  FROM accommodations a2
+  WHERE a2.accommodation_type_id = a.accommodation_type_id
+    AND a2.is_active = TRUE
+)
+AND a.is_active = TRUE
+ORDER BY at2.type_name;
 
 
