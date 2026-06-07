@@ -1,6 +1,6 @@
 # consultas_sql
 Consultas de la base de datos gestión de alojamientos turísticos
-# 🏨 accommodations_tourism
+# 🏨 alojamientos turísticos
 
 Base de datos relacional para la gestión de alojamientos turísticos: propietarios, huéspedes, reservas, pagos y reseñas.
 
@@ -52,7 +52,7 @@ accommodations_tourism
 
 ```
 accommodations_tourism/
-├── accommodation_database_restore.sql   # Script completo de restauración
+├── Consultas_sql.sql                    # Script completo de consultas
 └── README.md                            # Este archivo
 ```
 
